@@ -13,9 +13,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id       Int    @id @map("_id")
+model Landlord {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  email       String       @unique
+  username    String       @unique
+  properties  Property[]
+  contractors Contractor[]
+}
+
+model Tenant {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
   email    String @unique
   username String @unique
-  role     String
+  //location Property?
+}
+
+model Contractor {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  work      String[]
+  phone     String?  @default("NA")
+  email     String?  @default("NA")
+  location  String
+  hiredBy   Landlord @relation(fields: [hiredById], references: [id])
+  hiredById String   @db.ObjectId
+}
+
+model Property {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  owner    Landlord @relation(fields: [ownerId], references: [id])
+  ownerId  String   @unique @db.ObjectId
+  location String
+  // tenant Tenant @relation(fields: [tenantId], references: [id])
+  // tenantId String @db.ObjectId @unique
 }
