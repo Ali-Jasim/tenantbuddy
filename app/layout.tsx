@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+'use client';
+
 import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
 import Auth from './Blocks/Auth';
 import ControlPanel from './Blocks/ControlPanel';
@@ -6,16 +7,30 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './Blocks/app-sidebar';
-
-export const metadata: Metadata = {
-  title: 'Tenant Buddy',
-  description: 'Tenant Buddy, the best tenant management app',
-};
+import { useEffect, useState } from 'react';
+import { metadata } from './metadata'; // Import metadata
 
 export default function RootLayout() {
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  if (!hydrated) {
+    return null;
+  }
+
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          <title>{String(metadata.title)}</title>
+          <meta
+            name="description"
+            content={metadata.description ?? 'Default Description'}
+          />
+        </head>
         <body>
           <ThemeProvider
             attribute="class"
