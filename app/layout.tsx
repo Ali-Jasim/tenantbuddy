@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
 import Auth from './Blocks/Auth';
 import ControlPanel from './Blocks/ControlPanel';
-import '@/styles/globals.css';
+import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './Blocks/app-sidebar';
