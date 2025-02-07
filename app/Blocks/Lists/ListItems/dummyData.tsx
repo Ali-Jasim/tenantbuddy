@@ -62,4 +62,12 @@ export const contractors = [
     email: "contact@buildit.com",
     location: "321 Cedar Street, Chicago, IL 60605",
   },
+
+  {
+    name: "Buildme Inc.",
+    work: ["Roofing"],
+    phone: "555-987-6543",
+    email: "contact@buildme.com",
+    location: "123 Cedar Street, Toronto, IL 60605",
+  },
 ];

@@ -1,15 +1,15 @@
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
-const auth = () => {
+const Auth = () => {
   return (
-    <body className={"flex flex-col h-screen items-center justify-center"}>
+    <div className="flex flex-col h-screen items-center justify-center">
       <h1 className="text-4xl font-bold mb-20">Tenant Buddy</h1>
       <div className="flex justify-between w-1/5">
-        <SignInButton className="" />
-        <SignUpButton className="" />
+        <SignInButton />
+        <SignUpButton />
       </div>
-    </body>
+    </div>
   );
 };
 
-export default auth;
+export default Auth;

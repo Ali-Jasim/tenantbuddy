@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
-import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs";
-import Auth from "./Blocks/Auth";
-import ControlPanel from "./Blocks/ControlPanel";
-import "./globals.css";
-import { ThemeProvider } from "next-themes";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "./Blocks/app-sidebar";
+import type { Metadata } from 'next';
+import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
+import Auth from './Blocks/Auth';
+import ControlPanel from './Blocks/ControlPanel';
+import '@/styles/globals.css';
+import { ThemeProvider } from '@/components/theme-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { AppSidebar } from './Blocks/app-sidebar';
 
 export const metadata: Metadata = {
-  title: "Tenant Buddy",
-  description: "Tenant Buddy, the best tenant management app",
+  title: 'Tenant Buddy',
+  description: 'Tenant Buddy, the best tenant management app',
 };
 
 export default function RootLayout() {

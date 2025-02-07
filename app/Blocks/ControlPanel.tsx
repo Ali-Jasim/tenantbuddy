@@ -1,13 +1,7 @@
-import { UserButton } from "@clerk/nextjs";
-import ContractorList from "./Lists/ContractorList";
-import IssuesList from "./Lists/IssueList";
-import PropertiesList from "./Lists/PropertyList";
-import TenantsList from "./Lists/TenantList";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "./app-sidebar";
-import ListContainer from "./Lists/ListContainer";
-import { contractors, properties, tenants } from "./Lists/ListItems/dummyData";
-import { TableCell, TableRow } from "@/components/ui/table";
+import IssuesList from './Lists/IssueList';
+import ListContainer from './Lists/ListContainer';
+import { contractors, properties, tenants } from './Lists/ListItems/dummyData';
+import { TableCell, TableRow } from '@/components/ui/table';
 
 const ControlPanel = () => {
   const contractorListItems = contractors.map((contractor) => {
@@ -17,7 +11,7 @@ const ControlPanel = () => {
           <p>{contractor.name}</p>
         </TableCell>
         <TableCell className="text-center flex justify-center items-center">
-          <p>{contractor.work.join(", ")}</p>
+          <p>{contractor.work.join(', ')}</p>
         </TableCell>
         <TableCell className="text-center flex justify-center items-center">
           <p>{contractor.phone}</p>
@@ -68,33 +62,34 @@ const ControlPanel = () => {
           Tenant Buddy Control Panel
         </h1>
         <div className="flex flex-col h-full w-full gap-10 justify-center">
-          <div className="grid grid-cols-[2fr_1fr_2fr] gap-10">
+          <div className="grid grid-cols-[2fr_2fr] gap-10">
             <div className="flex items-center justify-center">
               <ListContainer
-                title="Tenants"
-                categories={["Name", "Address", "Email", "Phone"]}
-                gridOptions="grid-cols-[0.5fr_2fr_2fr_1fr_]"
+                title="🤡 Tenants 🤡"
+                categories={['Name', 'Address', 'Email', 'Phone']}
+                gridOptions="grid-cols-[1fr_2.5fr_2fr_1fr_]"
                 listItems={tenantListItems}
               />
             </div>
-            <div className="flex items-center justify-center ">
-              <ListContainer
-                title="Properties"
-                categories={["Location", "Tenant"]}
-                gridOptions="grid-cols-[1.5fr_0.5fr]"
-                listItems={propertyListItems}
-              />
-            </div>
+
             <div className="flex items-center justify-center">
               <ListContainer
-                title="Contractors"
-                categories={["Name", "Work", "Phone", "Email"]}
+                title="🛠 Contractors 🛠"
+                categories={['Name', 'Work', 'Phone', 'Email']}
                 gridOptions="grid-cols-[1fr_1fr_1fr_2fr_]"
                 listItems={contractorListItems}
               />
             </div>
           </div>
-          <div className="flex items-center justify-center h-1/2">
+          <div className="flex items-center justify-center h-1/2 gap-10">
+            <div className="flex items-center justify-center ">
+              <ListContainer
+                title="🏡 Properties 🏡"
+                categories={['Location', 'Tenant']}
+                gridOptions="grid-cols-[1.5fr_0.5fr]"
+                listItems={propertyListItems}
+              />
+            </div>
             <IssuesList />
           </div>
         </div>
