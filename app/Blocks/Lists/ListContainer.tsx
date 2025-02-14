@@ -6,19 +6,19 @@ export default function ListContainer({
   title,
   categories,
   gridOptions,
-  button = false,
+  button = null,
   listItems = null,
 }: {
   title: string;
   categories: string[];
   gridOptions: string;
-  button?: boolean;
+  button?: React.ReactNode;
   listItems: React.ReactNode;
 }) {
   const cellCategory = renderCells();
 
   return (
-    <Card className="w-full h-full">
+    <Card className=" w-full lg:w-fit h-fit flex flex-col">
       <CardHeader className="flex justify-center items-center">
         <CardTitle className="text-xl">{title}</CardTitle>
       </CardHeader>
@@ -29,12 +29,16 @@ export default function ListContainer({
           </TableHeader>
         </Table>
       </div>
-      <div className="border-2 rounded-md flex justify-between items-center mx-2 h-auto">
+      <div
+        className="border-2 rounded-md flex justify-between items-center mx-2 overflow-y-auto lg:max-h-[175px] 
+        scrollbar-thin scrollbar-thumb-neutral-600 scrollbar-track-neutral-900 
+        scrollbar-thumb-rounded-full scrollbar-track-rounded-full"
+      >
         <Table className={'grid ' + gridOptions}>
           {listItems || <p>no items</p>}
         </Table>
       </div>
-      <CardFooter className="flex justify-center items-center h-1/5 mt-5">
+      <CardFooter className="flex justify-center items-center mt-auto py-4">
         <Button className="font-bold">Manage</Button>
       </CardFooter>
     </Card>

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardHeader,
@@ -6,14 +6,14 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Table,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 
 export default function IssueList() {
   return (
@@ -39,25 +39,7 @@ export default function IssueList() {
           </TableHeader>
         </Table>
       </div>
-      <div className="border-2 rounded-md flex justify-between items-center mx-2">
-        <Table className="grid grid-cols-[0.5fr_1fr_2fr_2fr_0.5fr]  ">
-          <TableCell className="text-center flex justify-center items-center">
-            <p>Plumbing</p>
-          </TableCell>
-          <TableCell className="text-center flex justify-center items-center">
-            <p>420 Main street, Toronto</p>
-          </TableCell>
-          <TableCell className="text-center flex justify-center items-center">
-            <p>Toilet Broken</p>
-          </TableCell>
-          <TableCell className="text-center flex justify-center items-center">
-            <p>Call Plumber</p>
-          </TableCell>
-          <TableCell className="text-center flex justify-center items-center">
-            <Button className="bg-green-500 font-semibold">Resolve</Button>
-          </TableCell>
-        </Table>
-      </div>
+
       <div className="border-2 rounded-md flex justify-between items-center mx-2">
         <Table className="grid grid-cols-[0.5fr_1fr_2fr_2fr_0.5fr]  ">
           <TableCell className="text-center flex justify-center items-center">

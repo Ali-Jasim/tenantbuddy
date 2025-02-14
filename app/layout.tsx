@@ -18,7 +18,13 @@ export default function RootLayout() {
   }, []);
 
   if (!hydrated) {
-    return null;
+    return (
+      <html lang="en">
+        <body>
+          <div>Loading...</div>
+        </body>
+      </html>
+    );
   }
 
   return (
