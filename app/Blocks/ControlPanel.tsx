@@ -8,6 +8,7 @@ import {
 } from './Lists/ListItems/dummyData';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { IssueItem } from './Lists/ListItems/issueItem';
+import { Button } from '@/components/ui/button';
 
 const ControlPanel = () => {
   const contractorListItems = contractors.map((contractor) => {
@@ -104,7 +105,7 @@ const ControlPanel = () => {
               />
             </div>
           </div>
-          <div className="lg:flex items-center justify-center h-1/2 ">
+          <div className="lg:flex items-center justify-center h-1/2 lg:mx-5 lg:gap-5">
             <div className="flex items-center justify-center ">
               <ListContainer
                 title="🏡 Properties 🏡"
@@ -114,13 +115,18 @@ const ControlPanel = () => {
               />
             </div>
 
-            <div className="flex items-center my-5 lg:mx-5 justify-center ">
+            <div className="flex items-center my-5 justify-center ">
               <ListContainer
                 title="🏡 Issues 🏡"
                 categories={['Issue', 'Location', 'Description', 'Action']}
                 gridOptions="grid-cols-[0.5fr_1fr_2fr_2fr_0.5fr]"
                 listItems={issueListItems}
               />
+            </div>
+
+            <div className="md:hidden flex gap-5 items-center justify-center my-5 ">
+              <Button>Settings</Button>
+              <Button>Log Out</Button>
             </div>
           </div>
         </div>
