@@ -14,6 +14,7 @@ openai.api_key = os.environ.get("OPENAI_API_KEY")
 # Helper functions (placeholders)
 # ===============================
 
+
 async def perform_stt(audio_bytes: bytes) -> str:
     """
     Placeholder for your Speech-to-Text integration.
@@ -25,6 +26,7 @@ async def perform_stt(audio_bytes: bytes) -> str:
     # For demo purposes, assume the audio says:
     return "Hello, I need some assistance."
 
+
 async def generate_llm_response(transcription: str) -> str:
     """
     Uses the OpenAI ChatCompletion API (ChatGPT) to generate a response.
@@ -34,14 +36,18 @@ async def generate_llm_response(transcription: str) -> str:
             model="gpt-3.5-turbo",
             messages=[
                 # System message sets the context for the conversation.
-                {"role": "system", "content": "You are a helpful assistant that handles phone calls."},
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that handles phone calls.",
+                },
                 {"role": "user", "content": transcription},
             ],
             max_tokens=150,
         )
-        return response.choices[0].message['content'].strip()
+        return response.choices[0].message["content"].strip()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM error: {str(e)}")
+
 
 async def perform_tts(text: str) -> bytes:
     """
@@ -60,12 +66,13 @@ async def perform_tts(text: str) -> bytes:
 # API Endpoints
 # ===============================
 
+
 @app.post("/process", summary="Process audio to generate a response")
 async def process_audio(file: UploadFile = File(...)):
     """
     This endpoint receives an audio file (e.g., from a telephony webhook),
     processes it with STT, uses ChatGPT to generate a response, then converts that response via TTS.
-    
+
     For a production system:
       - Integrate a telephony provider (e.g., Twilio) to receive audio streams.
       - Consider asynchronous processing and low-latency streaming.
@@ -76,7 +83,7 @@ async def process_audio(file: UploadFile = File(...)):
         audio_bytes = await file.read()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error reading file: {str(e)}")
-    
+
     # Step 1: Speech-to-Text
     transcription = await perform_stt(audio_bytes)
     print(f"Transcription: {transcription}")
@@ -93,9 +100,9 @@ async def process_audio(file: UploadFile = File(...)):
     result = {
         "transcription": transcription,
         "response_text": response_text,
-        "audio_response": "Audio bytes not displayed in JSON"  # placeholder
+        "audio_response": "Audio bytes not displayed in JSON",  # placeholder
     }
-    
+
     # Option B: Alternatively, if you want to stream the audio file:
     # return StreamingResponse(iter([audio_response]), media_type="audio/wav")
 
