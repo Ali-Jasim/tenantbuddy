@@ -117,10 +117,37 @@ async def get_properties():
 
 # Issue endpoints
 @app.post("/issues")
-async def create_issue(description: str = Form(...), tenantPhone: str = Form(...)):
-    tenant = tenants.find_one({"phone": tenantPhone})
-    if not tenant:
-        raise HTTPException(status_code=404, detail="Tenant not found")
+async def create_issue(
+    description: str = Form(...),
+    tenant_id: Optional[str] = Form(None),
+    tenantPhone: Optional[str] = Form(None),
+):
+    # Validate that we have at least one tenant identifier
+    if not tenant_id and not tenantPhone:
+        raise HTTPException(
+            status_code=400, detail="Either tenant_id or tenantPhone must be provided"
+        )
+
+    # Find tenant by ID first (preferred method)
+    if tenant_id:
+        try:
+            tenant = tenants.find_one({"_id": ObjectId(tenant_id)})
+            if not tenant:
+                raise HTTPException(
+                    status_code=404, detail="Tenant not found with provided ID"
+                )
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid tenant ID format: {str(e)}"
+            )
+    # Fallback to phone lookup only if ID is not provided
+    else:
+        tenant = tenants.find_one({"phone": tenantPhone})
+        if not tenant:
+            raise HTTPException(
+                status_code=404, detail="Tenant not found with provided phone number"
+            )
+
     category = categorize_issue(description)
     issue_data = {
         "description": description,
