@@ -1,26 +1,27 @@
 'use client';
 
-import { ClerkProvider, SignedIn, SignedOut } from '@clerk/nextjs';
-import Auth from './Blocks/Auth';
-import ControlPanel from './Blocks/ControlPanel';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import { AppSidebar } from './Blocks/app-sidebar';
 import { useEffect, useState } from 'react';
 import { metadata } from './metadata'; // Import metadata
 
-export default function RootLayout() {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
-  }, []);
+    console.log('Hydrated');
+  });
 
   if (!hydrated) {
     return (
       <html lang="en">
-        <body>
+        <body className="bg-black text-white flex items-center justify-center h-screen w-screen">
           <div>Loading...</div>
         </body>
       </html>
@@ -44,15 +45,8 @@ export default function RootLayout() {
             enableSystem
             disableTransitionOnChange
           >
-            <SignedOut>
-              <Auth />
-            </SignedOut>
-            <SignedIn>
-              <SidebarProvider>
-                <AppSidebar />
-                <ControlPanel />
-              </SidebarProvider>
-            </SignedIn>
+            {/* Render extracted content */}
+            {children}
           </ThemeProvider>
         </body>
       </html>

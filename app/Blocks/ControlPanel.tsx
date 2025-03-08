@@ -1,4 +1,3 @@
-import IssuesList from './Lists/IssueList';
 import ListContainer from './Lists/ListContainer';
 import {
   contractors,
