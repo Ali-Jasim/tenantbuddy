@@ -1,498 +1,209 @@
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Request, HTTPException
 from pymongo import MongoClient
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
 from dotenv import load_dotenv
+from typing import Optional
 import os
 from bson import ObjectId
+from twilio.twiml.messaging_response import MessagingResponse
+from twilio.rest import Client
 
 # Load environment variables
 load_dotenv()
-
-# Get MongoDB connection details from environment variables
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_CLUSTER = os.getenv("DB_CLUSTER")
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_TOKEN = os.getenv("TWILIO_TOKEN")
+TWILIO_PHONE = os.getenv("TWILIO_PHONE")
 
-# Create MongoDB connection URI
-uri = f"mongodb+srv://{DB_USERNAME}:{DB_PASSWORD}@{DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0"
-
-
-# Create a MongoDB client and connect to the server
+# MongoDB connection setup
+MONGO_URI = f"mongodb+srv://{DB_USERNAME}:{DB_PASSWORD}@{DB_CLUSTER}/?retryWrites=true&w=majority&appName=Cluster0"
 try:
-    client = MongoClient(uri)
-    # Send a ping to confirm a successful connection
+    client = MongoClient(MONGO_URI)
     client.admin.command("ping")
-
-    print("Successfully connected to MongoDB!")
-
-    # Connect to the database
     db = client["tenantbuddy"]
-    print(db.list_collections().to_list())
-
-    landlords_collection = db["landlords"]
-    tenants_collection = db["tenants"]
-    properties_collection = db["properties"]
-    contractors_collection = db["contractors"]
+    landlords = db["landlords"]
+    tenants = db["tenants"]
+    properties = db["properties"]
+    contractors = db["contractors"]
+    issues = db["issues"]
 except Exception as e:
-    print(f"Error connecting to MongoDB: {e}")
+    raise Exception(f"Failed to connect to MongoDB: {e}")
 
-# ===============================
-# API Endpoints
-# ===============================
+# Twilio client initialization
+twilio_client = Client(TWILIO_SID, TWILIO_TOKEN)
+
+# FastAPI application with CORS
 app = FastAPI()
-
-
-@app.get("/hello")
-def hello_world():
-    return {"Hello": "World"}
-
-
-# ----------------------------------- #
-
-
-## landlord methods
-@app.post("/create_landlord")
-def create_landlord(name: str, email: str, properties: list[str] = None):
-    try:
-        # Create a new user document
-        user = {
-            "name": name,
-            "email": email,
-            "properties": (
-                properties if properties else []
-            ),  # Initialize as empty list if not provided
-        }
-
-        # Insert the user document into the "users" collection
-        result = landlords_collection.insert_one(user)
-
-        # Return the inserted ID
-        return {"inserted_id": str(result.inserted_id)}
-    except Exception as e:
-        return {"error": f"Failed to create landlord: {str(e)}"}
-
-
-@app.get("/get_landlords")
-def get_landlords():
-    try:
-        # Retrieve all users from the "users" collection
-        users = landlords_collection.find()
-
-        # Create a list to store the landlords
-        landlord_list = []
-
-        # Iterate over the cursor and add each landlord to the list
-        for user in users:
-            user["_id"] = str(user["_id"])  # Convert ObjectId to string
-            landlord_list.append(user)
-
-        # Return the list of landlords
-        return {"landlords": landlord_list}
-    except Exception as e:
-        return {"error": f"Failed to fetch landlords: {str(e)}"}
-
-
-@app.get("/get_landlord/{id}")
-def get_landlord(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Find one landlord with the given ID
-        landlord = landlords_collection.find_one({"_id": object_id})
-
-        if not landlord:
-            return {"error": "Landlord not found"}
-
-        # Convert ObjectId to string for JSON serialization
-        landlord["_id"] = str(landlord["_id"])
-
-        return {"landlord": landlord}
-    except Exception as e:
-        return {"error": f"Failed to fetch landlord: {str(e)}"}
-
-
-@app.put("/update_landlord/{id}")
-def update_landlord(
-    id: str, name: str = None, email: str = None, properties: list[str] = None
-):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Get current landlord data
-        current_landlord = landlords_collection.find_one({"_id": object_id})
-        if not current_landlord:
-            return {"error": "Landlord not found"}
-
-        # Create update document with only provided fields
-        update_data = {}
-        if name is not None:
-            update_data["name"] = name
-        if email is not None:
-            update_data["email"] = email
-        if properties is not None:
-            update_data["properties"] = properties
-
-        # Only update if there are fields to update
-        if update_data:
-            result = landlords_collection.update_one(
-                {"_id": object_id}, {"$set": update_data}
-            )
-
-            return {"message": "Landlord updated successfully"}
-        else:
-            return {"message": "No fields to update were provided"}
-
-    except Exception as e:
-        return {"error": f"Failed to update landlord: {str(e)}"}
-
-
-@app.delete("/delete_landlord/{id}")
-def delete_landlord(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Delete the landlord with the given ID
-        result = landlords_collection.delete_one({"_id": object_id})
-
-        if result.deleted_count == 1:
-            return {"message": "Landlord deleted successfully"}
-        else:
-            return {"error": "Landlord not found"}
-
-    except Exception as e:
-        return {"error": f"Failed to delete landlord: {str(e)}"}
-
-
-@app.get("/get_landlord_by_name/{name}")
-def get_landlord_by_name(name: str):
-    try:
-        # Find landlords with the given name
-        landlords = landlords_collection.find({"name": name})
-
-        # Create a list to store the landlords
-        landlord_list = []
-
-        # Iterate over the cursor and add each landlord to the list
-        for landlord in landlords:
-            landlord["_id"] = str(landlord["_id"])
-            landlord_list.append(landlord)
-
-        if not landlord_list:
-            return {"error": "No landlords found with that name"}
-
-        return {"landlords": landlord_list}
-    except Exception as e:
-        return {"error": f"Failed to fetch landlord: {str(e)}"}
-
-
-@app.get("/get_landlord_by_email/{email}")
-def get_landlord_by_email(email: str):
-    try:
-        # Find landlord with the given email
-        landlord = landlords_collection.find_one({"email": email})
-
-        if not landlord:
-            return {"error": "Landlord not found"}
-
-        # Convert ObjectId to string for JSON serialization
-        landlord["_id"] = str(landlord["_id"])
-
-        return {"landlord": landlord}
-    except Exception as e:
-        return {"error": f"Failed to fetch landlord: {str(e)}"}
-
-
-@app.get("/get_landlord_properties/{id}")
-def get_landlord_properties(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Find landlord with the given ID
-        landlord = landlords_collection.find_one({"_id": object_id})
-
-        if not landlord:
-            return {"error": "Landlord not found"}
-
-        # Get the list of properties
-        properties = landlord.get("properties", [])
-
-        return {"properties": properties}
-    except Exception as e:
-        return {"error": f"Failed to fetch properties: {str(e)}"}
-
-
-# ----------------------------------- #
-
-
-## tenant methods
-
-
-@app.post("/create_tenant")
-def create_tenant(name: str, email: str, phone: str, address: str):
-    try:
-        # Create a new user document
-        user = {"name": name, "email": email, "phone": phone, "address": address}
-
-        # Insert the user document into the "users" collection
-        result = tenants_collection.insert_one(user)
-
-        # Return the inserted ID
-        return {"inserted_id": str(result.inserted_id)}
-    except Exception as e:
-        return {"error": f"Failed to create tenant: {str(e)}"}
-
-
-@app.get("/get_tenants")
-def get_tenants():
-
-    try:
-        # Retrieve all users from the "users" collection
-        users = tenants_collection.find()
-
-        # Create a list to store the tenants
-        tenant_list = []
-
-        # Iterate over the cursor and add each tenant to the list
-        for user in users:
-            user["_id"] = str(user["_id"])  # Convert ObjectId to string
-            tenant_list.append(user)
-
-        # Return the list of tenants
-        return {"tenants": tenant_list}
-    except Exception as e:
-        return {"error": f"Failed to fetch tenants: {str(e)}"}
-
-
-@app.get("/get_tenant/{id}")
-def get_tenant(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Find one tenant with the given ID
-        tenant = tenants_collection.find_one({"_id": object_id})
-
-        if not tenant:
-            return {"error": "Tenant not found"}
-
-        # Convert ObjectId to string for JSON serialization
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Utility function for issue categorization
+def categorize_issue(description: str) -> str:
+    description = description.lower()
+    if "leak" in description or "pipe" in description:
+        return "plumbing"
+    if "light" in description or "electric" in description:
+        return "electrical"
+    return "general"
+
+
+# Tenant endpoints
+@app.post("/tenants")
+async def create_tenant(name: str = Form(...), phone: str = Form(...)):
+    tenant_data = {"name": name, "phone": phone}
+    result = tenants.insert_one(tenant_data)
+    return {
+        "inserted_id": str(result.inserted_id),
+        "message": "Tenant created successfully",
+    }
+
+
+@app.get("/tenants")
+async def get_tenants():
+    tenant_list = list(tenants.find())
+    for tenant in tenant_list:
         tenant["_id"] = str(tenant["_id"])
-
-        return {"tenant": tenant}
-    except Exception as e:
-        return {"error": f"Failed to fetch tenant: {str(e)}"}
+    return {"tenants": tenant_list}
 
 
-@app.put("/update_tenant/{id}")
-def update_tenant(
-    id: str, name: str = None, email: str = None, phone: str = None, address: str = None
+# Contractor endpoints
+@app.post("/contractors")
+async def create_contractor(
+    name: str = Form(...), phone: str = Form(...), specialty: str = Form(...)
 ):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Get current tenant data
-        current_tenant = tenants_collection.find_one({"_id": object_id})
-        if not current_tenant:
-            return {"error": "Tenant not found"}
-
-        # Create update document with only provided fields
-        update_data = {}
-        if name is not None:
-            update_data["name"] = name
-        if email is not None:
-            update_data["email"] = email
-        if phone is not None:
-            update_data["phone"] = phone
-        if address is not None:
-            update_data["address"] = address
-
-        # Only update if there are fields to update
-        if update_data:
-            result = tenants_collection.update_one(
-                {"_id": object_id}, {"$set": update_data}
-            )
-
-            return {"message": "Tenant updated successfully"}
-        else:
-            return {"message": "No fields to update were provided"}
-
-    except Exception as e:
-        return {"error": f"Failed to update tenant: {str(e)}"}
+    contractor_data = {"name": name, "phone": phone, "specialty": specialty}
+    result = contractors.insert_one(contractor_data)
+    return {
+        "inserted_id": str(result.inserted_id),
+        "message": "Contractor created successfully",
+    }
 
 
-@app.delete("/delete_tenant/{id}")
-def delete_tenant(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Delete the tenant with the given ID
-        result = tenants_collection.delete_one({"_id": object_id})
-
-        if result.deleted_count == 1:
-            return {"message": "Tenant deleted successfully"}
-        else:
-            return {"error": "Tenant not found"}
-
-    except Exception as e:
-        return {"error": f"Failed to delete tenant: {str(e)}"}
-
-
-@app.get("/get_tenant_by_name/{name}")
-def get_tenant_by_name(name: str):
-    try:
-        # Find tenants with the given name
-        tenants = tenants_collection.find({"name": name})
-
-        # Create a list to store the tenants
-        tenant_list = []
-
-        # Iterate over the cursor and add each tenant to the list
-        for tenant in tenants:
-            tenant["_id"] = str(tenant["_id"])
-            tenant_list.append(tenant)
-
-        if not tenant_list:
-            return {"error": "No tenants found with that name"}
-
-        return {"tenants": tenant_list}
-    except Exception as e:
-        return {"error": f"Failed to fetch tenant: {str(e)}"}
-
-
-# ----------------------------------- #
-
-
-## contractor methods
-@app.post("/create_contractor")
-def create_contractor(name: str, email: str, phone: str, skills: list[str] = None):
-    try:
-        # Create a new user document
-        user = {
-            "name": name,
-            "email": email,
-            "phone": phone,
-            "skills": (
-                skills if skills else []
-            ),  # Initialize as empty list if not provided
-        }
-
-        # Insert the user document into the "users" collection
-        result = contractors_collection.insert_one(user)
-
-        # Return the inserted ID
-        return {"inserted_id": str(result.inserted_id)}
-    except Exception as e:
-        return {"error": f"Failed to create contractor: {str(e)}"}
-
-
-@app.get("/get_contractors")
-def get_contractors():
-    try:
-        # Retrieve all users from the "users" collection
-        users = contractors_collection.find()
-
-        # Create a list to store the contractors
-        contractor_list = []
-
-        # Iterate over the cursor and add each contractor to the list
-        for user in users:
-            user["_id"] = str(user["_id"])  # Convert ObjectId to string
-            contractor_list.append(user)
-
-        # Return the list of contractors
-        return {"contractors": contractor_list}
-    except Exception as e:
-        return {"error": f"Failed to fetch contractors: {str(e)}"}
-
-
-@app.get("/get_contractor/{id}")
-def get_contractor(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Find one contractor with the given ID
-        contractor = contractors_collection.find_one({"_id": object_id})
-
-        if not contractor:
-            return {"error": "Contractor not found"}
-
-        # Convert ObjectId to string for JSON serialization
+@app.get("/contractors")
+async def get_contractors():
+    contractor_list = list(contractors.find())
+    for contractor in contractor_list:
         contractor["_id"] = str(contractor["_id"])
-
-        return {"contractor": contractor}
-    except Exception as e:
-        return {"error": f"Failed to fetch contractor: {str(e)}"}
+    return {"contractors": contractor_list}
 
 
-@app.put("/update_contractor/{id}")
-def update_contractor(
-    id: str,
-    name: str = None,
-    email: str = None,
-    phone: str = None,
-    skills: list[str] = None,
-):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
-
-        # Get current contractor data
-        current_contractor = contractors_collection.find_one({"_id": object_id})
-        if not current_contractor:
-            return {"error": "Contractor not found"}
-
-        # Create update document with only provided fields
-        update_data = {}
-        if name is not None:
-            update_data["name"] = name
-        if email is not None:
-            update_data["email"] = email
-        if phone is not None:
-            update_data["phone"] = phone
-        if skills is not None:
-            update_data["skills"] = skills
-
-        # Only update if there are fields to update
-        if update_data:
-            result = contractors_collection.update_one(
-                {"_id": object_id}, {"$set": update_data}
-            )
-
-            return {"message": "Contractor updated successfully"}
-        else:
-            return {"message": "No fields to update were provided"}
-
-    except Exception as e:
-        return {"error": f"Failed to update contractor: {str(e)}"}
+# Property endpoints
+@app.post("/properties")
+async def create_property(address: str = Form(...)):
+    property_data = {"address": address}
+    result = properties.insert_one(property_data)
+    return {
+        "inserted_id": str(result.inserted_id),
+        "message": "Property created successfully",
+    }
 
 
-@app.delete("/delete_contractor/{id}")
-def delete_contractor(id: str):
-    try:
-        # Convert string ID to ObjectId
-        object_id = ObjectId(id)
+@app.get("/properties")
+async def get_properties():
+    property_list = list(properties.find())
+    for property in property_list:
+        property["_id"] = str(property["_id"])
+    return {"properties": property_list}
 
-        # Delete the contractor with the given ID
-        result = contractors_collection.delete_one({"_id": object_id})
 
-        if result.deleted_count == 1:
-            return {"message": "Contractor deleted successfully"}
-        else:
-            return {"error": "Contractor not found"}
+# Issue endpoints
+@app.post("/issues")
+async def create_issue(description: str = Form(...), tenantPhone: str = Form(...)):
+    tenant = tenants.find_one({"phone": tenantPhone})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    category = categorize_issue(description)
+    issue_data = {
+        "description": description,
+        "tenant_id": str(tenant["_id"]),
+        "category": category,
+        "resolved": False,
+    }
+    result = issues.insert_one(issue_data)
+    return {
+        "inserted_id": str(result.inserted_id),
+        "message": "Issue created successfully",
+    }
 
-    except Exception as e:
-        return {"error": f"Failed to delete contractor: {str(e)}"}
+
+@app.get("/issues")
+async def get_issues():
+    issue_list = list(issues.find())
+    for issue in issue_list:
+        issue["_id"] = str(issue["_id"])
+        issue["tenant_id"] = str(issue["tenant_id"])
+    return {"issues": issue_list}
+
+
+# Twilio SMS endpoint
+@app.post("/sms")
+async def receive_sms(request: Request):
+    form_data = await request.form()
+    phone = form_data["From"]
+    message = form_data["Body"]
+    tenant = tenants.find_one({"phone": phone})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    category = categorize_issue(message)
+    issue_data = {
+        "description": message,
+        "tenant_id": str(tenant["_id"]),
+        "category": category,
+        "resolved": False,
+    }
+    issues.insert_one(issue_data)
+    response = MessagingResponse()
+    response.message("Issue received. The landlord has been notified.")
+    return str(response)
+
+
+# Issue approval endpoint
+@app.post("/issues/{issue_id}/approve")
+async def approve_issue(issue_id: str, contractor_id: str = Form(...)):
+    issue = issues.find_one({"_id": ObjectId(issue_id)})
+    contractor = contractors.find_one({"_id": ObjectId(contractor_id)})
+    tenant = tenants.find_one({"_id": ObjectId(issue["tenant_id"])}) if issue else None
+
+    if not all([issue, contractor, tenant]):
+        raise HTTPException(
+            status_code=404, detail="Issue, contractor, or tenant not found"
+        )
+
+    issues.update_one(
+        {"_id": ObjectId(issue_id)},
+        {"$set": {"resolved": True, "contractor_id": contractor_id}},
+    )
+
+    # Send notifications
+    twilio_client.messages.create(
+        body=f"Your {issue['category']} issue is being handled by {contractor['name']}.",
+        from_=TWILIO_PHONE,
+        to=tenant["phone"],
+    )
+    twilio_client.messages.create(
+        body=f"New job: {issue['description']} for tenant {tenant['phone']}.",
+        from_=TWILIO_PHONE,
+        to=contractor["phone"],
+    )
+    twilio_client.messages.create(
+        body=f"Issue {issue_id} assigned to {contractor['name']}.",
+        from_=TWILIO_PHONE,
+        to="+1234567890",  # TODO: Replace with dynamic landlord phone
+    )
+
+    return {"message": "Issue approved and notifications sent"}
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)  # Enable auto-reload for development
+    uvicorn.run(app, host="0.0.0.0", port=8000)
